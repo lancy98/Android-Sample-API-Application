@@ -1,16 +1,22 @@
 package com.example.apiapplication;
 
+import android.app.Activity;
+import android.app.ProgressDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Adapter;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -25,11 +31,14 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements NetworkRequest.NetworkResponse {
 
-    private RequestQueue requestQueue;
+    private NetworkRequest request;
     private CurrencyList currencyList;
     private ListView listView;
+    private Button button;
+    private EditText editText;
+
     public static final String TAG = "API-APP-LOG";
 
     @Override
@@ -38,33 +47,59 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         listView = findViewById(R.id.listView);
+        editText = findViewById(R.id.editText);
+        button = findViewById(R.id.loadButton);
 
-        requestQueue = Volley.newRequestQueue(this);
+        editTextFocusChangeListener();
+        addListenerToButton();
+        invokeAPI(null);
+
+    }
+
+    public void invokeAPI(String baseCurrencyCode) {
         String url = "https://api.exchangeratesapi.io/latest";
 
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET,
-                url,
-                null,
-                new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        currencyList = new CurrencyList(response);
-                        updateListView();
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.d(MainActivity.TAG, "response error");
-                    }
-                }
-        );
+        if (baseCurrencyCode != null && baseCurrencyCode.length() > 0) {
+            url += "?base=" + baseCurrencyCode.toUpperCase();
+        }
 
-        requestQueue.add(jsonObjectRequest);
+        request = new NetworkRequest(this, url, this);
+    }
+
+    public void editTextFocusChangeListener() {
+        editText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View v, boolean hasFocus) {
+                if (!hasFocus) {
+                    hideKeyboard(v);
+                }
+            }
+        });
+    }
+
+    public void addListenerToButton() {
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String currencyCode = editText.getText().toString();
+                invokeAPI((currencyCode.length() > 0) ? currencyCode : null);
+                hideKeyboard(getCurrentFocus());
+            }
+        });
+    }
+
+    public void networkResponse(JSONObject jsonObject ,VolleyError error) {
+        if (jsonObject != null) {
+            currencyList = new CurrencyList(jsonObject);
+            updateListView();
+        } else {
+            Toast.makeText(this, "Response Error", Toast.LENGTH_SHORT).show();
+        }
+
+        request = null;
     }
 
     public void updateListView() {
-
         ArrayAdapter adapter = new ArrayAdapter(
                 this, android.R.layout.simple_list_item_2, android.R.id.text1, currencyList.currencies) {
             @Override
@@ -80,6 +115,11 @@ public class MainActivity extends AppCompatActivity {
         };
 
         listView.setAdapter(adapter);
+    }
+
+    public void hideKeyboard(View view) {
+        InputMethodManager inputMethodManager =(InputMethodManager)getSystemService(Activity.INPUT_METHOD_SERVICE);
+        inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
     }
 
 }
