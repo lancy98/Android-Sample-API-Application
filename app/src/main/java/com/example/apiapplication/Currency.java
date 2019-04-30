@@ -1,10 +1,5 @@
 package com.example.apiapplication;
 
-import android.util.Log;
-
-import org.json.JSONObject;
-
-
 public class Currency {
     public String countryName;
     public double rate;

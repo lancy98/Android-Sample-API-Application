@@ -1,35 +1,22 @@
 package com.example.apiapplication;
 
 import android.app.Activity;
-import android.app.ProgressDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.view.inputmethod.InputMethodManager;
-import android.widget.Adapter;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ListAdapter;
 import android.widget.ListView;
-import android.widget.SimpleCursorAdapter;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.android.volley.Request;
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
 import com.android.volley.VolleyError;
-import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.Volley;
-
 import org.json.JSONObject;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements NetworkRequest.NetworkResponse {
 
@@ -38,6 +25,7 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
     private ListView listView;
     private Button button;
     private EditText editText;
+    private ProgressBar progressBar;
 
     public static final String TAG = "API-APP-LOG";
 
@@ -49,6 +37,7 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
         listView = findViewById(R.id.listView);
         editText = findViewById(R.id.editText);
         button = findViewById(R.id.loadButton);
+        progressBar = findViewById(R.id.progressBar);
 
         editTextFocusChangeListener();
         addListenerToButton();
@@ -63,6 +52,8 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
             url += "?base=" + baseCurrencyCode.toUpperCase();
         }
 
+        progressBar.setVisibility(View.VISIBLE);
+        disableUserInteraction();
         request = new NetworkRequest(this, url, this);
     }
 
@@ -89,6 +80,9 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
     }
 
     public void networkResponse(JSONObject jsonObject ,VolleyError error) {
+        enableUserInteraction();
+        progressBar.setVisibility(View.GONE);
+
         if (jsonObject != null) {
             currencyList = new CurrencyList(jsonObject);
             updateListView();
@@ -108,8 +102,10 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
                 TextView text1 = (TextView) view.findViewById(android.R.id.text1);
                 TextView text2 = (TextView) view.findViewById(android.R.id.text2);
 
-                text1.setText("Currency Code : " + currencyList.currencies.get(position).countryName);
-                text2.setText("Price : " + currencyList.currencies.get(position).rate);
+                Currency currency = currencyList.currencies.get(position);
+
+                text1.setText("Currency Code : " + currency.countryName);
+                text2.setText("Price : " + currency.rate);
                 return view;
             }
         };
@@ -120,6 +116,19 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
     public void hideKeyboard(View view) {
         InputMethodManager inputMethodManager =(InputMethodManager)getSystemService(Activity.INPUT_METHOD_SERVICE);
         inputMethodManager.hideSoftInputFromWindow(view.getWindowToken(), 0);
+    }
+
+    public void disableUserInteraction() {
+        getWindow().setFlags(
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        );
+    }
+
+    public void enableUserInteraction() {
+        getWindow().clearFlags(
+                WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE
+        );
     }
 
 }

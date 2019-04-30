@@ -2,7 +2,6 @@ package com.example.apiapplication;
 
 import android.util.Log;
 
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -30,14 +29,18 @@ public class CurrencyList {
 
     public void populateRates(JSONObject jsonObject) {
         try {
+            String baseCountryCode = jsonObject.getString("base");
             JSONObject ratesJSON = jsonObject.getJSONObject("rates");
             Iterator<String> keys = ratesJSON.keys();
 
             while(keys.hasNext()) {
                 String key = keys.next();
-                double value = ratesJSON.getDouble(key);
-                Currency currency = new Currency(key, value);
-                currencies.add(currency);
+
+                if (!baseCountryCode.equals(key)) {
+                    double value = ratesJSON.getDouble(key);
+                    Currency currency = new Currency(key, value);
+                    currencies.add(currency);
+                }
             }
         } catch (Exception exception) {
             Log.d(MainActivity.TAG, "not able to get rate : " + exception.getLocalizedMessage());
