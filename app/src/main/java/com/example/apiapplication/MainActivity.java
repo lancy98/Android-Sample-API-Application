@@ -41,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements NetworkRequest.Ne
 
         editTextFocusChangeListener();
         addListenerToButton();
-        invokeAPI(null);
+        invokeAPI("USD");
 
     }
 
